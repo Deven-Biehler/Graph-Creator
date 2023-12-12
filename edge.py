@@ -1,6 +1,7 @@
 import pygame
 from include import *
 from vertex import Vertex
+import math
 
 class Edge:
     def __init__(self, start_vertex, end_vertex):
@@ -9,13 +10,32 @@ class Edge:
         self.color = BLUE
         self.width = 2
     
-    def draw(self, screen, mouse_pos=None):
+    def draw(self, screen, mouse_pos=None, draw_arrow=False):
         if self._end_vertex is None:
             if mouse_pos is not None:
                 pygame.draw.line(screen, self.color, self._start_vertex.position, mouse_pos, self.width)
+                if draw_arrow:
+                    arrow_pos = self._calculate_arrow_position(self._start_vertex.position, mouse_pos)
+                    pygame.draw.polygon(screen, self.color, arrow_pos)
         else:
             pygame.draw.line(screen, self.color, self._start_vertex.position, self._end_vertex.position, self.width)
-    
+            if draw_arrow:
+                arrow_pos = self._calculate_arrow_position(self._start_vertex.position, self._end_vertex.position)
+                pygame.draw.polygon(screen, self.color, arrow_pos)
+
+    def _calculate_arrow_position(self, start_pos, end_pos):
+        arrow_length = 10
+        arrow_angle = 0.4
+        dx = end_pos[0] - start_pos[0]
+        dy = end_pos[1] - start_pos[1]
+        angle = math.atan2(dy, dx)
+        arrow_pos = [
+            (end_pos[0] - arrow_length * math.cos(angle - arrow_angle), end_pos[1] - arrow_length * math.sin(angle - arrow_angle)),
+            (end_pos[0], end_pos[1]),
+            (end_pos[0] - arrow_length * math.cos(angle + arrow_angle), end_pos[1] - arrow_length * math.sin(angle + arrow_angle))
+        ]
+        return arrow_pos
+
     def update(self, screen):
         self.draw(screen)
     

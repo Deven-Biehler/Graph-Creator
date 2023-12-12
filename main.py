@@ -37,6 +37,10 @@ mode_colors = {
     "delete": RED
 }
 
+options = {
+    "directed": False,
+}
+
 # Sidebar information
 sidebar_rect = pygame.Rect(WIDTH, 0, SIDEBAR_WIDTH, HEIGHT)
 sidebar_font = pygame.font.SysFont(None, 20)
@@ -138,6 +142,8 @@ while running:
                 game_mode = "move"
             elif event.key == pygame.K_d:
                 game_mode = "delete"
+            elif event.key == pygame.K_c:
+                options["directed"] = not options["directed"]
 
     # Clear the screen
     screen.fill(WHITE)
@@ -152,13 +158,19 @@ while running:
 
     # Draw edges
     for edge in edges:
-        edge.draw(screen, mouse_pos=pygame.mouse.get_pos())
+        if options["directed"]:
+            draw_arrow=True
+        else:
+            draw_arrow=False
+        edge.draw(screen, mouse_pos=pygame.mouse.get_pos(), draw_arrow=draw_arrow)
+    
 
     # Draw mode indicator
     mode_indicator_rect = pygame.Rect(10, 10, 100, 30)
     pygame.draw.rect(screen, mode_colors[game_mode], mode_indicator_rect)
     mode_indicator_text = pygame.font.SysFont(None, 20).render(game_mode.capitalize(), True, BLACK)
     screen.blit(mode_indicator_text, (15, 15))
+
 
     # Draw sidebar
     pygame.draw.rect(screen, SIDEBAR_COLOR, sidebar_rect)
