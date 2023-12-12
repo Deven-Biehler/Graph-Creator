@@ -2,16 +2,21 @@ import pygame
 from include import *
 
 class Vertex:
-    def __init__(self, position, color):
+    def __init__(self, name, position, color):
+        self.name = name
         self.position = position
         self.color = color
         self.radius = VERTEX_RADIUS
         self.selected = False
         self.attached = False
-        self.attached_edge = None
+        self.attached_edges = []
     
     def draw(self, screen):
-        pygame.draw.circle(screen, self.color, self.position, self.radius)
+        if self.selected:
+            pygame.draw.circle(screen, BLACK, self.position, self.radius + 2)
+            pygame.draw.circle(screen, self.color, self.position, self.radius)
+        else:
+            pygame.draw.circle(screen, self.color, self.position, self.radius)
     
     def update(self, screen):
         self.draw(screen)

@@ -19,7 +19,6 @@ attached_vertex = None
 
 # Edge information
 edges = []  # list of Edge objects
-drawing_line = False
 
 # Game Modes
 # Modes:
@@ -37,9 +36,55 @@ mode_colors = {
     "delete": RED
 }
 
-options = {
-    "directed": False,
-}
+def add_vertex(position, color):
+    # Get definition of vertex
+    position, color = Commands.define_vertex(event)
+    create_vertex(position, color)
+
+def create_vertex(position, color):
+    # Create a new Vertex object
+    vertex = Vertex(len(vertices), position, color)
+    # Add vertex object to collection
+    vertices.append(vertex)
+
+def add_edge(event):
+    x, y = event.pos
+    # Check each vertex for a click
+    for vertex in vertices:
+        if vertex.is_clicked(x, y):
+            # Append the reference of the vertex to the selected vertex list
+            selected_vertices.append(vertex)
+            vertex.selected = True
+            # if there are already 2 selected vertices
+            if len(selected_vertices) >= 2:
+                # Define an edge
+                edges[-1].set_end_vertex(selected_vertices[1])
+                edges[-1].get_start_vertex().set_color(RED)
+
+                # Reset the selected vertex list
+                while selected_vertices != []:
+                    selected_vertices.pop().selected = False
+
+            # If this is the first selected vertex
+            elif len(selected_vertices) == 1:
+                if is_drawing_line():
+                    edge.set_end_vertex(vertex)
+                else:
+                    create_edge(selected_vertices[0], None)
+
+
+def create_edge(start_vertex, end_vertex):
+    edge = Edge(len(edges), start_vertex, end_vertex)
+    edges.append(edge)
+
+
+def is_drawing_line():
+    if len(edges) == 0:
+        return False
+    if edges[-1].get_end_vertex() is None:
+        return True
+    else:
+        return False
 
 # Sidebar information
 sidebar_rect = pygame.Rect(WIDTH, 0, SIDEBAR_WIDTH, HEIGHT)
@@ -53,54 +98,11 @@ while running:
             running = False
         if game_mode == "vertex":
             if event.type == pygame.MOUSEBUTTONDOWN:
-                # Get definition of vertex
-                position, color = Commands.define_vertex(event)
-                # Create a new Vertex object
-                vertex = Vertex(position, color)
-                # Add vertex object to collection
-                vertices.append(vertex)
+                add_vertex(event.pos, BLACK)
         
         if game_mode == "edge":
             if event.type == pygame.MOUSEBUTTONDOWN:
-                # Get position of cursor
-                x, y = event.pos
-
-                # Check each vertex
-                for vertex in vertices:
-                    # If cursor is over this vertex
-                    if vertex.is_clicked(x, y):
-                        # Append the reference of the vertex to the selected vertex list
-                        selected_vertices.append(vertex)
-                        # if there are already 2 selected vertices
-                        if len(selected_vertices) >= 2:
-                            # Define an edge
-                            edges[-1].set_end_vertex(selected_vertices[1])
-                            edges[-1].get_start_vertex().set_color(RED)
-
-                            # If the new edge does not already exist
-                            if edge not in edges:
-                                # Add new edge
-                                edges.append(edge)
-
-                            # Reset the selected vertex list
-                            selected_vertices = []
-
-                            # Reset the drawing_line user tag
-                            drawing_line = False
-
-                        # If this is the first selected vertex
-                        elif len(selected_vertices) == 1:
-                            if drawing_line:
-                                edge.set_end_vertex(vertex)
-                            else:
-                                # Begin a preview of the new line
-                                vertex = selected_vertices[0]
-                                edge = Edge(vertex, None)
-                                edge.set_start_vertex(vertex)
-                                edges.append(edge)
-
-                                # Start the drawing line user tag
-                                drawing_line = True
+                add_edge(event)
 
         elif game_mode == "move":
             if event.type == pygame.MOUSEBUTTONDOWN:
@@ -120,20 +122,16 @@ while running:
                         vertices.remove(vertex)
                         # Remove any edges connected to the vertex
                         edges = [edge for edge in edges if edge.get_start_vertex() != vertex and edge.get_end_vertex() != vertex]
-                        # Clear the selected vertices list if the deleted vertex was selected
-                        if vertex in selected_vertices:
-                            selected_vertices.remove(vertex)
-                        break
 
         if event.type == pygame.MOUSEMOTION:
             if game_mode == "edge":
-                if drawing_line:
+                if is_drawing_line():
                     edge = edges[-1]
             elif game_mode == "move":
                 if attached_vertex is not None:
                     attached_vertex.set_position(event.pos)
 
-        elif event.type == pygame.KEYDOWN and not drawing_line:
+        elif event.type == pygame.KEYDOWN and not is_drawing_line():
             if event.key == pygame.K_q:
                 game_mode = "vertex"
             elif event.key == pygame.K_w:
@@ -143,26 +141,19 @@ while running:
             elif event.key == pygame.K_d:
                 game_mode = "delete"
             elif event.key == pygame.K_c:
-                options["directed"] = not options["directed"]
+                DIRECTED_MODE = not DIRECTED_MODE
 
     # Clear the screen
     screen.fill(WHITE)
 
     # Draw vertices
     for vertex in vertices:
-        if vertex in selected_vertices:
-            vertex.color = BLUE
-            vertex.draw(screen)
-        else:
-            vertex.draw(screen)
+        vertex.update(screen)
+
 
     # Draw edges
     for edge in edges:
-        if options["directed"]:
-            draw_arrow=True
-        else:
-            draw_arrow=False
-        edge.draw(screen, mouse_pos=pygame.mouse.get_pos(), draw_arrow=draw_arrow)
+        edge.draw(screen, mouse_pos=pygame.mouse.get_pos(), draw_arrow=DIRECTED_MODE)
     
 
     # Draw mode indicator
@@ -181,6 +172,7 @@ while running:
 
     # Update the display
     pygame.display.flip()
+
 
 # Quit Pygame
 pygame.quit()

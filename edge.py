@@ -4,13 +4,14 @@ from vertex import Vertex
 import math
 
 class Edge:
-    def __init__(self, start_vertex, end_vertex):
+    def __init__(self, name, start_vertex, end_vertex):
+        self.name = name
         self._start_vertex = start_vertex
         self._end_vertex = end_vertex
         self.color = BLUE
         self.width = 2
     
-    def draw(self, screen, mouse_pos=None, draw_arrow=False):
+    def draw(self, screen, mouse_pos=None, draw_arrow=DIRECTED_MODE):
         if self._end_vertex is None:
             if mouse_pos is not None:
                 pygame.draw.line(screen, self.color, self._start_vertex.position, mouse_pos, self.width)
@@ -35,9 +36,6 @@ class Edge:
             (end_pos[0] - arrow_length * math.cos(angle + arrow_angle), end_pos[1] - arrow_length * math.sin(angle + arrow_angle))
         ]
         return arrow_pos
-
-    def update(self, screen):
-        self.draw(screen)
     
     def __repr__(self):
         return f"Edge({self._start_vertex}, {self._end_vertex})"
@@ -55,6 +53,7 @@ class Edge:
     
     def set_start_vertex(self, vertex):
         self._start_vertex = vertex
+        vertex.attached_edges.append(self)
     
     def set_end_vertex(self, vertex):
         self._end_vertex = vertex
