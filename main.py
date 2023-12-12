@@ -38,6 +38,42 @@ mode_colors = {
     "edit": BLUE
 }
 
+def is_bipartite(edges):
+    color = {}  # Dictionary to store the color of each vertex
+
+    def dfs(vertex, parent, visited):
+        nonlocal color
+        visited.add(vertex)
+
+        for edge in edges:
+            if edge.get_start_vertex() == vertex or edge.get_end_vertex() == vertex:
+                neighbor = edge.get_end_vertex() if edge.get_start_vertex() == vertex else edge.get_start_vertex()
+                if neighbor not in visited:
+                    color[neighbor] = 1 - color[vertex]  # Assign a different color to the neighbor
+                    if not dfs(neighbor, vertex, visited):
+                        return False
+                elif neighbor != parent and color[neighbor] == color[vertex]:
+                    return False
+
+        return True
+
+    for edge in edges:
+        start_vertex = edge.get_start_vertex()
+        end_vertex = edge.get_end_vertex()
+
+        if start_vertex not in color:
+            color[start_vertex] = 0  # Assign color 0 to the start vertex
+            if not dfs(start_vertex, None, set()):
+                return False
+
+        if end_vertex not in color:
+            color[end_vertex] = 0  # Assign color 0 to the end vertex
+            if not dfs(end_vertex, None, set()):
+                return False
+
+    return True
+
+
 def find_bridges(edges):
     bridges = []
 
@@ -133,9 +169,8 @@ def create_vertex(position, color):
 def remove_vertex(vertex):
     vertices.remove(vertex)
     # Remove any edges connected to the vertex
-    for edge in edges:
-        if edge.get_start_vertex() == vertex or edge.get_end_vertex() == vertex:
-            edges.remove(edge)
+    for edge in vertex.attached_edges:
+        remove_edge(edge)
 
 def add_edge(event):
     x, y = event.pos
@@ -204,9 +239,11 @@ while running:
                 for vertex in vertices:
                     if vertex.is_clicked(x, y):
                         remove_vertex(vertex)
+                        break
                 for edge in edges:
                     if edge.is_clicked(x, y):
                         remove_edge(edge)
+                        break
         
         elif game_mode == "edit":
             if event.type == pygame.MOUSEBUTTONDOWN:
@@ -289,11 +326,13 @@ while running:
     screen.blit(sidebar_text, (WIDTH + 10, 130))
     sidebar_text = sidebar_font.render("Total Bridges: {}".format(len(find_bridges(edges))), True, BLACK)
     screen.blit(sidebar_text, (WIDTH + 10, 160))
+    sidebar_text = sidebar_font.render("Bipartite: {}".format(is_bipartite(edges)), True, BLACK)
+    screen.blit(sidebar_text, (WIDTH + 10, 190))
 
     for i, vertex in enumerate(vertices):
         degrees = len(vertex.attached_edges)
         sidebar_text = sidebar_small_font.render("Vertex {}, {}: Degrees: {}".format(vertex.name, vertex.label, degrees), True, BLACK)
-        screen.blit(sidebar_text, (WIDTH + 10, 190 + (i * 10)))
+        screen.blit(sidebar_text, (WIDTH + 10, 220 + (i * 10)))
 
 
     # Update the display
