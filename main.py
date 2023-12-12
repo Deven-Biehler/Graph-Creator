@@ -26,6 +26,7 @@ edges = []  # list of Edge objects
 # edge mode: key(W)
 # move mode: key(E)
 # delete mode: key(D)
+# edit mode: key(R)
 game_mode = "vertex"
 
 # Define colors for the modes
@@ -33,7 +34,8 @@ mode_colors = {
     "vertex": GREEN,
     "edge": YELLOW,
     "move": ORANGE,
-    "delete": RED
+    "delete": RED,
+    "edit": BLUE
 }
 
 def add_loops():
@@ -128,6 +130,14 @@ while running:
                 for edge in edges:
                     if edge.is_clicked(x, y):
                         remove_edge(edge)
+        
+        elif game_mode == "edit":
+            if event.type == pygame.MOUSEBUTTONDOWN:
+                x, y = event.pos
+                for vertex in vertices:
+                    if vertex.is_clicked(x, y):
+                        vertex.label = input("Enter a label for this vertex: ")
+                        vertex.color = input("Enter a color for this vertex: ")
 
         if event.type == pygame.MOUSEMOTION:
             if game_mode == "edge":
@@ -148,6 +158,8 @@ while running:
                 game_mode = "delete"
             elif event.key == pygame.K_c:
                 DIRECTED_MODE = not DIRECTED_MODE
+            elif event.key == pygame.K_r:
+                game_mode = "edit"
 
     add_loops()
 

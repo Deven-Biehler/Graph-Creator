@@ -95,6 +95,11 @@ class Edge:
     def _draw_curved_line(self, surface, color, start, control_point):
         if control_point[0] > 0 and control_point[1] > 0:
             pygame.draw.arc(surface, color, [start[0], start[1], control_point[0], control_point[1]], 5.3*math.pi/6, 2*math.pi/3.3)
-        
+    
+    def get_label(self):
+        return self.label
+
+    def set_label(self, label):
+        self.label = label
 
 
