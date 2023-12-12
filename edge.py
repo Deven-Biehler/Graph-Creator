@@ -10,19 +10,31 @@ class Edge:
         self._end_vertex = end_vertex
         self.color = BLUE
         self.width = 2
+        self.isLoop = False
     
     def draw(self, screen, mouse_pos=None, draw_arrow=DIRECTED_MODE):
-        if self._end_vertex is None:
-            if mouse_pos is not None:
-                pygame.draw.line(screen, self.color, self._start_vertex.position, mouse_pos, self.width)
-                if draw_arrow:
-                    arrow_pos = self._calculate_arrow_position(self._start_vertex.position, mouse_pos)
-                    pygame.draw.polygon(screen, self.color, arrow_pos)
-        else:
-            pygame.draw.line(screen, self.color, self._start_vertex.position, self._end_vertex.position, self.width)
+        if self.isLoop:
+            control_point = (60, 60)
+            self._draw_curved_line(screen, self.color, self._start_vertex.position, control_point)
             if draw_arrow:
-                arrow_pos = self._calculate_arrow_position(self._start_vertex.position, self._end_vertex.position)
+                arrow_pos = [
+                    (self._start_vertex.position[0] + 10 + VERTEX_RADIUS, self._end_vertex.position[1] + 5),
+                    (self._start_vertex.position[0] + VERTEX_RADIUS, self._end_vertex.position[1]),
+                    (self._start_vertex.position[0] + 10 + VERTEX_RADIUS, self._end_vertex.position[1] - 5)
+                ]
                 pygame.draw.polygon(screen, self.color, arrow_pos)
+        else:
+            if self._end_vertex is None:
+                if mouse_pos is not None:
+                    pygame.draw.line(screen, self.color, self._start_vertex.position, mouse_pos, self.width)
+                    if draw_arrow:
+                        arrow_pos = self._calculate_arrow_position(self._start_vertex.position, mouse_pos)
+                        pygame.draw.polygon(screen, self.color, arrow_pos)
+            else:
+                pygame.draw.line(screen, self.color, self._start_vertex.position, self._end_vertex.position, self.width)
+                if draw_arrow:
+                    arrow_pos = self._calculate_arrow_position(self._start_vertex.position, self._end_vertex.position)
+                    pygame.draw.polygon(screen, self.color, arrow_pos)
 
     def _calculate_arrow_position(self, start_pos, end_pos):
         arrow_length = 10
@@ -50,6 +62,22 @@ class Edge:
             return True
         else:
             return False
+        
+    def is_clicked(self, x, y):
+        if self._end_vertex is None:
+            return False
+        
+        start_x, start_y = self._start_vertex.position
+        end_x, end_y = self._end_vertex.position
+        
+        # Calculate the distance between the click position and the line segment
+        distance = abs((end_y - start_y) * x - (end_x - start_x) * y + end_x * start_y - end_y * start_x) / math.sqrt((end_y - start_y) ** 2 + (end_x - start_x) ** 2)
+        
+        # Check if the distance is within a threshold (e.g., 5 pixels)
+        if distance <= 5:
+            return True
+        else:
+            return False
     
     def set_start_vertex(self, vertex):
         self._start_vertex = vertex
@@ -63,3 +91,10 @@ class Edge:
     
     def get_end_vertex(self):
         return self._end_vertex
+    
+    def _draw_curved_line(self, surface, color, start, control_point):
+        if control_point[0] > 0 and control_point[1] > 0:
+            pygame.draw.arc(surface, color, [start[0], start[1], control_point[0], control_point[1]], 5.3*math.pi/6, 2*math.pi/3.3)
+        
+
+

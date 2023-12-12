@@ -36,6 +36,11 @@ mode_colors = {
     "delete": RED
 }
 
+def add_loops():
+    for edge in edges:
+        if edge.get_start_vertex() == edge.get_end_vertex():
+            edge.isLoop = True
+
 def add_vertex(position, color):
     # Get definition of vertex
     position, color = Commands.define_vertex(event)
@@ -47,35 +52,35 @@ def create_vertex(position, color):
     # Add vertex object to collection
     vertices.append(vertex)
 
+def remove_vertex(vertex):
+    vertices.remove(vertex)
+    # Remove any edges connected to the vertex
+    for edge in edges:
+        if edge.get_start_vertex() == vertex or edge.get_end_vertex() == vertex:
+            edges.remove(edge)
+
 def add_edge(event):
     x, y = event.pos
     # Check each vertex for a click
     for vertex in vertices:
         if vertex.is_clicked(x, y):
-            # Append the reference of the vertex to the selected vertex list
-            selected_vertices.append(vertex)
-            vertex.selected = True
-            # if there are already 2 selected vertices
-            if len(selected_vertices) >= 2:
-                # Define an edge
-                edges[-1].set_end_vertex(selected_vertices[1])
+            # Finishing line
+            if is_drawing_line():
+                # set the final edge
+                edges[-1].set_end_vertex(vertex)
                 edges[-1].get_start_vertex().set_color(RED)
 
-                # Reset the selected vertex list
-                while selected_vertices != []:
-                    selected_vertices.pop().selected = False
-
             # If this is the first selected vertex
-            elif len(selected_vertices) == 1:
-                if is_drawing_line():
-                    edge.set_end_vertex(vertex)
-                else:
-                    create_edge(selected_vertices[0], None)
-
+            elif not is_drawing_line():
+                create_edge(vertex, None)
+                    
 
 def create_edge(start_vertex, end_vertex):
     edge = Edge(len(edges), start_vertex, end_vertex)
     edges.append(edge)
+
+def remove_edge(edge):
+    edges.remove(edge)
 
 
 def is_drawing_line():
@@ -96,6 +101,7 @@ while running:
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             running = False
+
         if game_mode == "vertex":
             if event.type == pygame.MOUSEBUTTONDOWN:
                 add_vertex(event.pos, BLACK)
@@ -118,10 +124,10 @@ while running:
                 x, y = event.pos
                 for vertex in vertices:
                     if vertex.is_clicked(x, y):
-                        # Remove the vertex from the collection
-                        vertices.remove(vertex)
-                        # Remove any edges connected to the vertex
-                        edges = [edge for edge in edges if edge.get_start_vertex() != vertex and edge.get_end_vertex() != vertex]
+                        remove_vertex(vertex)
+                for edge in edges:
+                    if edge.is_clicked(x, y):
+                        remove_edge(edge)
 
         if event.type == pygame.MOUSEMOTION:
             if game_mode == "edge":
@@ -143,13 +149,14 @@ while running:
             elif event.key == pygame.K_c:
                 DIRECTED_MODE = not DIRECTED_MODE
 
+    add_loops()
+
     # Clear the screen
     screen.fill(WHITE)
 
     # Draw vertices
     for vertex in vertices:
         vertex.update(screen)
-
 
     # Draw edges
     for edge in edges:
