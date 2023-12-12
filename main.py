@@ -38,6 +38,82 @@ mode_colors = {
     "edit": BLUE
 }
 
+def find_bridges(edges):
+    bridges = []
+
+    def dfs(vertex, parent, visited, disc, low):
+        nonlocal bridges
+        visited.add(vertex)
+        disc[vertex] = dfs.time
+        low[vertex] = dfs.time
+        dfs.time += 1
+
+        for edge in edges:
+            if edge.get_start_vertex() == vertex or edge.get_end_vertex() == vertex:
+                neighbor = edge.get_end_vertex() if edge.get_start_vertex() == vertex else edge.get_start_vertex()
+                if neighbor not in visited:
+                    dfs(neighbor, vertex, visited, disc, low)
+                    low[vertex] = min(low[vertex], low[neighbor])
+                    if low[neighbor] > disc[vertex]:
+                        bridges.append(edge)
+                elif neighbor != parent:
+                    low[vertex] = min(low[vertex], disc[neighbor])
+
+    dfs.time = 0
+    visited = set()
+    disc = {}
+    low = {}
+
+    for edge in edges:
+        start_vertex = edge.get_start_vertex()
+        end_vertex = edge.get_end_vertex()
+
+        if start_vertex not in visited:
+            dfs(start_vertex, None, visited, disc, low)
+
+        if end_vertex not in visited:
+            dfs(end_vertex, None, visited, disc, low)
+
+    return bridges
+
+
+def detect_components():
+    visited = set()  # Set to keep track of visited vertices
+    components = []  # List to store the components
+
+    for edge in edges:
+        start_vertex = edge.get_start_vertex()
+        end_vertex = edge.get_end_vertex()
+
+        # Perform depth-first search from each unvisited vertex
+        if start_vertex not in visited:
+            component = set()  # Set to store the vertices in the component
+            dfs(start_vertex, visited, component)
+            components.append(component)
+
+        # Perform depth-first search from each unvisited vertex
+        if end_vertex not in visited:
+            component = set()  # Set to store the vertices in the component
+            dfs(end_vertex, visited, component)
+            components.append(component)
+
+    return components
+
+def dfs(vertex, visited, component):
+    visited.add(vertex)
+    component.add(vertex)
+
+    for edge in edges:
+        if edge.get_start_vertex() == vertex:
+            neighbor = edge.get_end_vertex()
+            if neighbor not in visited:
+                dfs(neighbor, visited, component)
+        elif edge.get_end_vertex() == vertex:
+            neighbor = edge.get_start_vertex()
+            if neighbor not in visited:
+                dfs(neighbor, visited, component)
+
+
 def add_loops():
     for edge in edges:
         if edge.get_start_vertex() == edge.get_end_vertex():
@@ -96,6 +172,7 @@ def is_drawing_line():
 # Sidebar information
 sidebar_rect = pygame.Rect(WIDTH, 0, SIDEBAR_WIDTH, HEIGHT)
 sidebar_font = pygame.font.SysFont(None, 20)
+sidebar_small_font = pygame.font.SysFont(None, 15)
 
 # Main game loop
 running = True
@@ -181,6 +258,22 @@ while running:
     mode_indicator_text = pygame.font.SysFont(None, 20).render(game_mode.capitalize(), True, BLACK)
     screen.blit(mode_indicator_text, (15, 15))
 
+    # Clear previous information about verticies
+    for vertex in vertices:
+        vertex.attached = False
+        vertex.attached_edges = []
+
+    # Add information to verticies
+    for edge in edges:
+        edge.get_start_vertex().attached = True
+        if edge.get_end_vertex() is not None:
+            edge.get_end_vertex().attached = True
+        edge.get_start_vertex().attached_edges.append(edge)
+        if edge.get_end_vertex() is not None:
+            edge.get_end_vertex().attached_edges.append(edge)
+    
+
+    # Gather Information for the sidebar
 
     # Draw sidebar
     pygame.draw.rect(screen, SIDEBAR_COLOR, sidebar_rect)
@@ -188,6 +281,20 @@ while running:
     screen.blit(sidebar_text, (WIDTH + 10, 10))
     sidebar_text = sidebar_font.render("Number of Edges: {}".format(len(edges)), True, BLACK)
     screen.blit(sidebar_text, (WIDTH + 10, 40))
+    sidebar_text = sidebar_font.render("Directed Mode: {}".format(DIRECTED_MODE), True, BLACK)
+    screen.blit(sidebar_text, (WIDTH + 10, 70))
+    sidebar_text = sidebar_font.render("Total Degrees: {}".format(len(edges)*2), True, BLACK)
+    screen.blit(sidebar_text, (WIDTH + 10, 100))
+    sidebar_text = sidebar_font.render("Total Components: {}".format(len(detect_components())), True, BLACK)
+    screen.blit(sidebar_text, (WIDTH + 10, 130))
+    sidebar_text = sidebar_font.render("Total Bridges: {}".format(len(find_bridges(edges))), True, BLACK)
+    screen.blit(sidebar_text, (WIDTH + 10, 160))
+
+    for i, vertex in enumerate(vertices):
+        degrees = len(vertex.attached_edges)
+        sidebar_text = sidebar_small_font.render("Vertex {}, {}: Degrees: {}".format(vertex.name, vertex.label, degrees), True, BLACK)
+        screen.blit(sidebar_text, (WIDTH + 10, 190 + (i * 10)))
+
 
     # Update the display
     pygame.display.flip()
