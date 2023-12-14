@@ -102,4 +102,3 @@ class Edge:
     def set_label(self, label):
         self.label = label
 
-
